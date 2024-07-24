@@ -209,18 +209,16 @@ app.post("/Login", async (req, res) => {
 });
 
 app.post("/Register", async (req, res) => {
-  const { title, description, imagePath, price } = req.body; // Assuming these fields exist in the request body
+  const { title, description, price } = req.body; // Assuming these fields exist in the request body
 
-  if (!title || !description || !imagePath || !price) {
+  if (!title || !description || !price) {
     return res.status(400).json({ error: "All fields are required" });
   }
 
   try {
     const newProduct = await Product.create({
-      // Using the defined Product model
       title,
-      description, // Add description if needed
-      imagePath,
+      description,
       price,
     });
     res
@@ -229,6 +227,16 @@ app.post("/Register", async (req, res) => {
   } catch (error) {
     console.error("Error creating product:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.get("/products", async (req, res) => {
+  try {
+    const allProducts = await Product.findAll(); // Assuming Product is your model
+    res.status(200).json(allProducts);
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    res.status(500).json({ error: "Error al obtener los productos" });
   }
 });
 
