@@ -4,6 +4,7 @@ const PORT = 8080;
 app.use(express.static("public"));
 const cors = require("cors");
 const { Sequelize, Model, DataTypes } = require("sequelize");
+const bcrypt = require("bcryptjs");
 
 app.use(cors());
 app.use(express.json());
@@ -142,8 +143,20 @@ app.get("/", async (req, res) => {
   ]);
 });
 
+async function hashPassword(password) {
+  const saltRounds = 10;
+  const hashedPassword = await bcrypt.hash(password, saltRounds);
+  return hashedPassword;
+}
+
 app.post("/InitialLogin", async (req, res) => {
   const { nombre, apellido, dni, celular, email, password } = req.body;
+
+  if (password.length < 8) {
+    return res
+      .status(400)
+      .json({ error: "La contraseña debe tener al menos 8 caracteres" });
+  }
 
   if (!nombre || !apellido || !dni || !celular || !email || !password) {
     return res.status(400).json({ error: "Datos incompletos" });
@@ -155,13 +168,14 @@ app.post("/InitialLogin", async (req, res) => {
   }
 
   try {
+    const hashedPassword = await hashPassword(password);
     const newUser = await User.create({
       nombre,
       apellido,
       dni,
       email,
       celular,
-      password,
+      password: hashedPassword,
       isAdmin: false,
     });
     const existingAdmin = await User.findOne({ where: { isAdmin: true } });
@@ -173,7 +187,7 @@ app.post("/InitialLogin", async (req, res) => {
           dni: "1",
           email: "adm@gmail.com",
           celular: "1",
-          password: "adm123",
+          password: await hashPassword("adm123"),
           isAdmin: true,
         });
         console.log("Admin user created");
@@ -195,11 +209,14 @@ app.post("/Login", async (req, res) => {
   try {
     const user = await User.findOne({ where: { email } });
     if (!user) {
-      return res.status(401).json();
+      return res.status(401).json({
+        error: "Usuario no encontrado",
+      });
     }
 
-    if (user.password !== password) {
-      return res.status(401).json();
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "Contraseña incorrecta" });
     }
     res.status(200).json({ success: true, message: "Login successful" });
   } catch (error) {
