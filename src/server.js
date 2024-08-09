@@ -5,6 +5,7 @@ app.use(express.static("public"));
 const cors = require("cors");
 const { Sequelize, Model, DataTypes } = require("sequelize");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 app.use(cors());
 app.use(express.json());
@@ -34,7 +35,7 @@ const User = sequelize.define("user", {
   },
   isAdmin: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false, // Default user is not admin
+    defaultValue: false,
   },
 });
 
@@ -218,7 +219,16 @@ app.post("/Login", async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({ error: "Contraseña incorrecta" });
     }
-    res.status(200).json({ success: true, message: "Login successful" });
+    const token = jwt.sign({ userId: user._id }, "tu_secreto_aqui", {
+      expiresIn: "1h",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      user: { nombre: user.nombre },
+    });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ error: "Server error" });
