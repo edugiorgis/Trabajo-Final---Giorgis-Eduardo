@@ -236,7 +236,7 @@ app.post("/Login", async (req, res) => {
 });
 
 app.post("/Register", async (req, res) => {
-  const { title, description, price } = req.body; // Assuming these fields exist in the request body
+  const { title, description, price } = req.body;
 
   if (!title || !description || !price) {
     return res.status(400).json({ error: "All fields are required" });
@@ -259,7 +259,7 @@ app.post("/Register", async (req, res) => {
 
 app.get("/products", async (req, res) => {
   try {
-    const allProducts = await Product.findAll(); // Assuming Product is your model
+    const allProducts = await Product.findAll();
     res.status(200).json(allProducts);
   } catch (error) {
     console.error("Error fetching products:", error);
